@@ -47,15 +47,12 @@ async function record() {
 
 function doPreview() {
     if (!blobs.length) {
-        console.log("No hay blobios!");
     } else {
-        console.log("Hay audio!");
         const blob = new Blob(blobs);
 
         //Usar fetch para enviar el audio grabado a Pythonio
         var fd = new FormData();
         fd.append("audio", blob, "audio");
-        console.log("enviando audio");
         fetch(recordUrl, {
             method: "POST",
             body: fd,
@@ -66,7 +63,6 @@ function doPreview() {
             //Puedes hacer algo más inteligente aquí
             console.log("Oops: Ocurrió un error", err);
         });
-        console.log("audio enviado");
     }
 }
 
@@ -81,13 +77,11 @@ function stop() {
 
 //Llamar al handler en caso que exista
 function handleAudioResponse(response){
-    console.log(response)
     if (!response || response == null) {
         //TODO subscribe you thief
         console.log("No response");
         return;
     }
-    console.log("limpiando audio");
     // Detener y liberar el stream de audio
     stream.getTracks().forEach(track => track.stop());
     

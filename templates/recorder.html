@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Recorder</title>
+    <title>A.L.F.R.E.D.</title>
     <link rel="icon" href="/static/img/ai.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
     <link rel="stylesheet" href="/static/recorder.css" />
@@ -18,7 +18,7 @@
             id="record"
             onclick="record()"
           >
-            <img class="mic-img" src="/static/img/microphone.png" />
+            <img class="mic-img" src="/static/img/microphone.png" alt="Imagen de un microfono" />
           </button>
           <button
             type="button"
@@ -32,6 +32,7 @@
               id="record-stop-label"
               src="/static/img/Stop.png"
               style="display: initial;"
+              alt="Imagen de stop grabacion"
             />
             <span id="record-stop-loading" style="display: none"
               ><span
@@ -77,10 +78,8 @@
           document.getElementById("record").style.display = "";
           document.getElementById("stop").style.display = "none";
           if (!response || response == null) {
-            console.log("No response");
             return;
           }
-          console.log("El texto fue: " + response.text);
           document.getElementById("text").innerHTML = response.text;
           if (typeof response.audio_url !== "undefined") {
             // Configurar la fuente del elemento de audio

@@ -32,19 +32,17 @@ def audio():
         audio_hash = calculate_hash("audio.mp3")
         # Obtener el archivo de audio grabado desde la solicitud
         audio = request.files.get("audio")
-        print("1")
         # Guardar el archivo de audio en el sistema de archivos
         audio.save("audio.mp3")
-        print("audio guardado")
         # Abrir el archivo de audio para lectura binaria
         audio_file = open("audio.mp3", "rb")
-        print("audio abierto")
         # Transcribir el audio usando la API de OpenAI
         transcribed = openai.Audio.transcribe("whisper-1", audio_file)
-        print("audio transcrito")
         
         # Mostrar el audio transcrito en la consola
+        print("========================================")
         print("Texto transcrito:", transcribed.text)
+        print("========================================")
         
         # Crear la respuesta de OpenAI con el texto transcrito
         response = openai.ChatCompletion.create(
@@ -67,10 +65,12 @@ def audio():
         result = ""
         for choice in response.choices:
             result += choice.message.content
+        print("========================================")
+        print("Respuesta generada:", response.choices[0].message.content)
+        print("========================================")
 
         # Obtener la ruta absoluta del directorio actual
         current_directory = os.path.abspath(os.path.dirname(__file__))
-        print("Directorio actual:", current_directory)
 
         # Obtener la ruta completa del directorio "static"
         static_directory = os.path.join(current_directory, "static")
