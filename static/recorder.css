@@ -128,6 +128,8 @@ audio {
     margin: 10px;
     width: 94%;
     color: #fff;
+    max-height: 58%;
+    overflow: auto;
   }
   
   .texto-mensaje{
