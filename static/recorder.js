@@ -1,11 +1,11 @@
+// Declaracion de variables globales
 let blobs = [];
 let stream;
 let rec;
 let recordUrl;
 let audioResponseHandler;
 
-//Solo grabo el URL a llamar (e.g. /audio) y el 'handler'
-//o 'callback' a llamar cuando termine la grabacion
+// Función para configurar el URL de grabación y el manejador de respuesta
 function recorder(url, handler) {
     recordUrl = url;
     if (typeof handler !== "undefined") {
@@ -13,10 +13,7 @@ function recorder(url, handler) {
     }
 }
 
-/**
- * Al ser un proyecto pequeño uso doc.getById como maniaco
- * Si no te gusta, puedes cambiarlo ;)
- */
+// Función para iniciar la grabación
 async function record() {
     try {
         document.getElementById("text").innerHTML = "<i>Grabando...</i>";
@@ -26,31 +23,39 @@ async function record() {
         document.getElementById("record-stop-loading").style.display="none"
         document.getElementById("stop").disabled=false
 
+        // Limpiar el array de blobs
         blobs = [];
 
-        //Grabar audio, blabla
+        // Obtener acceso al micrófono
         stream = await navigator.mediaDevices.getUserMedia({audio:true, video:false})
         rec = new MediaRecorder(stream);
+
+        // Capturar los datos de audio disponibles durante la grabación
         rec.ondataavailable = e => {
             if (e.data) {
                 blobs.push(e.data);
             }
         }
         
+        // Llamar a la función doPreview cuando se detenga la grabación
         rec.onstop = doPreview;
         
+        // Iniciar la grabación
         rec.start();
     } catch (e) {
-        alert("No fue posible iniciar el grabador de audio! Favor de verificar que se tenga el permiso adecuado, estar en HTTPS, etc...");
+        alert("No fue posible iniciar el grabador de audio.");
     }
 }
 
+// Función para procesar los blobs de audio y enviarlos al servidor
 function doPreview() {
     if (!blobs.length) {
+        // No hay blobs para procesar
     } else {
+        // Crear un objeto Blob a partir de los blobs grabados
         const blob = new Blob(blobs);
 
-        //Usar fetch para enviar el audio grabado a Pythonio
+        // Usar fetch para enviar el audio grabado al servidor
         var fd = new FormData();
         fd.append("audio", blob, "audio");
         fetch(recordUrl, {
@@ -60,13 +65,14 @@ function doPreview() {
         .then((response) => response.json())
         .then(audioResponseHandler)
         .catch(err => {
-            //Puedes hacer algo más inteligente aquí
             console.log("Oops: Ocurrió un error", err);
         });
     }
 }
 
+// Función para detener la grabación
 function stop() {
+    // Cambiar la interfaz para mostrar que se está procesando
     document.getElementById("text").innerHTML = "Procesando...";
     document.getElementById("record-stop-label").style.display="none";
     document.getElementById("record-stop-loading").style.display="block";
@@ -75,7 +81,7 @@ function stop() {
     rec.stop();
 }
 
-//Llamar al handler en caso que exista
+// Función para manejar la respuesta de audio
 function handleAudioResponse(response){
     if (!response || response == null) {
         //TODO subscribe you thief

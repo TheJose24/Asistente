@@ -3,48 +3,46 @@ import openai
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, send_from_directory, url_for
 from gtts import gTTS
-import hashlib
+import datetime 
 
-# Cargar llaves del archivo .env
 load_dotenv()
-openai.api_key = os.getenv('OPENAI_API_KEY')
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Crear una instancia de la aplicación Flask
 app = Flask(__name__)
 
-# Definir una ruta para la página de inicio
+# Definir la ruta para la página de inicio
 @app.route("/")
 def index():
-    return render_template("recorder.html")
+    return render_template("recorder.html")  # Renderizar una plantilla HTML llamada "recorder.html"
 
-def calculate_hash(file_path):
-    hash_md5 = hashlib.md5()
-    with open(file_path, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
+# Función para calcular un hash basado en la hora actual
+def calculate_audio_hash():
+    current_time = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    return current_time
 
-# Definir una ruta para recibir y procesar audio
-@app.route("/audio", methods=["POST"])
-def audio():
+# Función para guardar un archivo de audio
+def save_audio(audio):
     try:
-        # Calcular el hash del archivo de audio
-        audio_hash = calculate_hash("audio.mp3")
-        # Obtener el archivo de audio grabado desde la solicitud
-        audio = request.files.get("audio")
-        # Guardar el archivo de audio en el sistema de archivos
-        audio.save("audio.mp3")
-        # Abrir el archivo de audio para lectura binaria
-        audio_file = open("audio.mp3", "rb")
-        # Transcribir el audio usando la API de OpenAI
-        transcribed = openai.Audio.transcribe("whisper-1", audio_file)
-        
-        # Mostrar el audio transcrito en la consola
+        audio.save("audio.mp3")  # Guardar el archivo de audio con el nombre "audio.mp3"
+        return True
+    except Exception as e:
+        raise Exception("Error saving audio: " + str(e))
+
+# Función para transcribir un archivo de audio utilizando la API de OpenAI
+def transcribe_audio(audio_file):
+    try:
+        transcribed = openai.Audio.transcribe("whisper-1", audio_file)  # Transcribir el audio utilizando el modelo "whisper-1"
         print("========================================")
-        print("Texto transcrito:", transcribed.text)
+        print("Transcribed Audio:", transcribed.text)
         print("========================================")
-        
-        # Crear la respuesta de OpenAI con el texto transcrito
+        return transcribed.text
+    except Exception as e:
+        raise Exception("Transcription error: " + str(e))
+
+# Función para generar una respuesta en base al audio transcrito utilizando la API de OpenAI
+def generate_openai_response(transcribed_text):
+    try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-0613",
             messages=[
@@ -57,7 +55,7 @@ def audio():
                 "Solo hablas español"},
                 
                 {"role": "user",
-                "content": transcribed.text}],
+                "content": transcribed_text}],
                 max_tokens=60
         )
 
@@ -69,34 +67,59 @@ def audio():
         print("Respuesta generada:", response.choices[0].message.content)
         print("========================================")
 
-        # Obtener la ruta absoluta del directorio actual
-        current_directory = os.path.abspath(os.path.dirname(__file__))
+        return response.choices[0].message.content
+    except Exception as e:
+        raise Exception("OpenAI response error: " + str(e))
+    
+# Variable global para almacenar el nombre del último archivo generado
+last_generated_filename = None
 
-        # Obtener la ruta completa del directorio "static"
-        static_directory = os.path.join(current_directory, "static")
+# Función para crear un archivo de audio de respuesta utilizando gTTS
+def create_response_audio(result):
+    try:
+        global last_generated_filename  # Accede a la variable global
 
-        # Nombre del archivo de respuesta con el hash
+        # Eliminar el archivo anterior si existe
+        if last_generated_filename:
+            os.remove(os.path.join("static", last_generated_filename))
+
+        tts = gTTS(result, lang='es', tld='com.mx')
+        audio_hash = calculate_audio_hash()
         response_filename = f"response_{audio_hash}.mp3"
-
-        # Crear un archivo de audio de respuesta utilizando gTTS y guardarlo en "static"
-        response_path = os.path.join(static_directory, response_filename)
-        tts = gTTS(result, lang='es', tld='com.pe')
+        response_path = os.path.join("static", response_filename)
         tts.save(response_path)
 
-        # Retornar la URL del archivo de respuesta al cliente
+        # Actualizar la variable con el nombre del último archivo generado
+        last_generated_filename = response_filename
+
         response_url = url_for('serve_static', filename=response_filename)
-        return {"result": "ok", "text": result, "audio_url": response_url}
+        return response_url
     except Exception as e:
-         # Manejar errores y retornar un diccionario con el mensaje de error
+        raise Exception("Response audio creation error: " + str(e))
+
+# Ruta para manejar las solicitudes POST de archivos de audio
+@app.route("/audio", methods=["POST"])
+def audio():
+    try:
+        audio = request.files.get("audio")  # Obtener el archivo de audio de la solicitud
+        if not audio:
+            return {"error": "No audio file provided"}
+
+        save_audio(audio)  # Guardar el archivo de audio
+        audio_file = open("audio.mp3", "rb")  # Abrir el archivo de audio guardado
+        transcribed_text = transcribe_audio(audio_file)  # Transcribir el audio
+        response_text = generate_openai_response(transcribed_text)  # Generar una respuesta utilizando OpenAI
+        response_audio_url = create_response_audio(response_text)  # Crear un archivo de audio de respuesta
+
+        return {"result": "ok", "text": response_text, "audio_url": response_audio_url, "transcription": transcribed_text}
+    except Exception as e:
         return {"error": str(e)}
-    
-# Ruta para servir archivos estáticos (como response.mp3)
+
+# Ruta para servir archivos estáticos (como archivos de audio)
 @app.route('/static/<path:filename>')
 def serve_static(filename):
-    print(filename)
-    print(serve_static.__name__)
-    return send_from_directory('static', filename)
+    return send_from_directory('static', filename)  # Enviar el archivo estático solicitado desde la carpeta "static"
 
-# Iniciar la aplicación
+# Iniciar la aplicación si se ejecuta este archivo directamente
 if __name__ == "__main__":
-    app.run()
+    app.run()  # Iniciar la aplicación Flask y esperar por solicitudes

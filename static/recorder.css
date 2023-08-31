@@ -2,8 +2,8 @@ body {
   margin: 0;
   padding: 0;
   background-color: #111;
-  overflow: hidden;
   font-family: Arial, sans-serif;
+  overflow: hidden;
 }
 
 .container {
@@ -32,6 +32,30 @@ body {
   background-color: #19ceae;
   transition: background-color 0.3s ease-in-out;
   cursor: pointer;
+  aspect-ratio: 1;
+  animation: l2 1.5s infinite linear;
+  position: relative;
+}
+
+.btn-record:before,
+.btn-record:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 #222;
+  animation: inherit;
+  animation-delay: -0.5s;
+}
+.btn-record:after {
+  animation-delay: -1s;
+}
+@keyframes l2 {
+    100% {box-shadow: 0 0 0 40px #0000}
+}
+
+@keyframes l1 {
+  100% {box-shadow: 0 0 0 30px #555}
 }
 
 .btn-record:hover {
@@ -80,6 +104,11 @@ body {
   margin-top: 20px;
 }
 
+.mensaje{
+  display: none ;
+  position: fixed;
+}
+
 audio {
   position: fixed;
   top: 20px;
@@ -87,3 +116,50 @@ audio {
   opacity: 0.7;
 }
 
+@media (max-width: 480px){
+  #out{
+    position: absolute;
+    top: 200px;
+    z-index: -1;
+  }
+  
+  .mensaje{
+    display: block;
+    margin: 10px;
+    width: 94%;
+    color: #fff;
+  }
+  
+  .texto-mensaje{
+    background: #15ab8c;
+    padding: 15px;
+    border-radius: 15px;
+    border-bottom-left-radius: 0;
+  }
+  
+  .columDerecha{
+    display: flex;
+    justify-content: flex-end;
+  }
+  .columIzquierda{
+    display: flex;
+    max-width: 250px;
+  }
+  .usuario{
+    background: #579ffb;
+    max-width: 250px;
+    right: 0;
+    border-radius: 15px;
+    border-bottom-right-radius: 0;
+    margin: 15px;
+  }
+  
+  .asistente{
+    left: 0;
+    max-width: 250px;
+    top: 110px;
+    border-radius: 15px;
+    border-bottom-left-radius: 0;
+    margin: 15px;
+  }
+}
